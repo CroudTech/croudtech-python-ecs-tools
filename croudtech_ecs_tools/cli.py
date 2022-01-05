@@ -4,14 +4,18 @@ from click.decorators import command
 from click.termui import prompt
 import os
 
-ecs_client = boto3.client("ecs")
 class EcsTools:
     _services = {}
     _tasks = {}
+
+    def __init__(self, region):
+        self.region = region
+        self.ecs_client = boto3.client("ecs", region=self.region)
+
     @property
     def clusters(self):
         if not hasattr(self, "_clusters"):
-            paginator = ecs_client.get_paginator("list_clusters")
+            paginator = self.ecs_client.get_paginator("list_clusters")
             response_iterator = paginator.paginate(
                 PaginationConfig={
                     "PageSize": 10,
@@ -27,7 +31,7 @@ class EcsTools:
     def get_services(self, cluster):
         if cluster not in self._services:
             self._services[cluster] = []
-            paginator = ecs_client.get_paginator("list_services")
+            paginator = self.ecs_client.get_paginator("list_services")
 
             response_iterator = paginator.paginate(
                 cluster=cluster,           
@@ -44,7 +48,7 @@ class EcsTools:
         task_key = cluster+service
         if task_key not in self._tasks:
             self._tasks[task_key] = []
-            paginator = ecs_client.get_paginator("list_tasks")
+            paginator = self.ecs_client.get_paginator("list_tasks")
             response_iterator = paginator.paginate(
                 cluster=cluster,
                 serviceName=service,           
@@ -58,7 +62,7 @@ class EcsTools:
         return self._tasks[task_key]
 
     def describe_task(self, cluster, task_arn):
-        response = ecs_client.describe_tasks(
+        response = self.ecs_client.describe_tasks(
             cluster=cluster,
             tasks=[
                 task_arn,
@@ -68,7 +72,7 @@ class EcsTools:
         return task
 
     def execute_command(self,cluster, container, task_arn, command="bash"):
-        return ecs_client.execute_command(
+        return self.ecs_client.execute_command(
             cluster=cluster,
             container=container["name"],
             command=command,
@@ -107,7 +111,6 @@ class EcsTools:
         return "\n".join(options)
 
 
-ecs_tools = EcsTools()
 
 
 @click.group()
@@ -117,8 +120,10 @@ def cli():
 
 
 @cli.command()
-# @click.option("--cluster", type=click.Choice(ecs_tools.clusters), required=True, prompt=True)
-def ecs_shell():
+@click.option("--region", required=True, default=os.getenv("AWS_DEFAULT_REGION", "eu-west-2"))
+def ecs_shell(region):
+    ecs_tools = EcsTools(region)
+
     "Shell into an ECS task container"
     click.secho(ecs_tools.get_cluster_options(), fg="cyan")
     cluster = ecs_tools.clusters[int(click.prompt("Please select a cluster"))]
