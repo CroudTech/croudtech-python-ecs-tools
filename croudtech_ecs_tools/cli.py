@@ -10,7 +10,9 @@ class EcsTools:
 
     def __init__(self, region):
         self.region = region
-        self.ecs_client = boto3.client("ecs", region=self.region)
+        self.ecs_client = boto3.client("ecs", config={
+            "region_name": self.region
+        })
 
     @property
     def clusters(self):
