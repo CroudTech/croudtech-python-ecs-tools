@@ -1,5 +1,6 @@
 import click
 import boto3
+from botocore.config import Config as Boto3Config
 from click.decorators import command
 from click.termui import prompt
 import os
@@ -10,9 +11,10 @@ class EcsTools:
 
     def __init__(self, region):
         self.region = region
-        self.ecs_client = boto3.client("ecs", config={
-            "region_name": self.region
-        })
+        print(self.region)
+        self.ecs_client = boto3.client("ecs", config=Boto3Config(
+            region_name= self.region
+        ))
 
     @property
     def clusters(self):
