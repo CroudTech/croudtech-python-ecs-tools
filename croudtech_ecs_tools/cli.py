@@ -125,7 +125,8 @@ def cli():
 
 @cli.command()
 @click.option("--region", required=True, default=os.getenv("AWS_DEFAULT_REGION", "eu-west-2"))
-def ecs_shell(region):
+@click.option("--command", default="bash")
+def ecs_shell(region, command):
     ecs_tools = EcsTools(region)
 
     "Shell into an ECS task container"
@@ -142,7 +143,7 @@ def ecs_shell(region):
     container = ecs_tools.get_task_containers(cluster, task_arn)[int(click.prompt("Please select a container"))]["name"]
     click.secho("Connecting to  Cluster:" + cluster + " Service:" + service_arn.split("/").pop() + " Task:" + task_arn.split("/").pop() + " Container: " + container, fg="green" )
     task_id = task_arn.split("/").pop()
-    command = f"aws ecs execute-command --cluster {cluster} --task {task_id} --container {container} --interactive --command bash"
+    command = f"aws ecs execute-command --cluster {cluster} --task {task_id} --container {container} --interactive --command {command}"
     click.secho("Executing command", fg="green")
     click.secho(command, fg="cyan")
     os.system(command)
