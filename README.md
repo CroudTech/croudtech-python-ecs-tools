@@ -15,7 +15,17 @@ Install this tool using `pip`:
 
 ## Usage
 
-Usage instructions go here.
+Usage: python -m croudtech_ecs_tools.cli [OPTIONS] COMMAND [ARGS]...
+
+  Tools for managing ECS Services and Tasks
+
+Options:
+  --version  Show the version and exit.
+  --help     Show this message and exit.
+
+Commands:
+  ecs-shell
+  croudtech-ecs-tools
 
 ## Development
 
