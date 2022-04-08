@@ -1,3 +1,4 @@
+from email.policy import default
 import click
 import boto3
 from botocore.config import Config as Boto3Config
@@ -32,6 +33,10 @@ class EcsTools:
             
         return self._clusters
     
+    def extractFromArn(self, arn):
+        arn_parts = arn.split(":")[-1].split("/")[1:]
+        return arn_parts
+
     def get_services(self, cluster):
         if cluster not in self._services:
             self._services[cluster] = []
@@ -84,6 +89,32 @@ class EcsTools:
             task=task_arn
         )
 
+    def restart_service(self, service_arn, wait=False):
+        try:
+            cluster, service = self.extractFromArn(service_arn)
+        except ValueError as err:
+            click.echo(f"Invalid service ARN {service_arn}")
+            return
+        waiter = self.ecs_client.get_waiter('services_stable')
+        
+        self.ecs_client.update_service(
+            cluster=cluster,
+            service=service,
+            forceNewDeployment=True
+        )
+        if wait:
+            waiter.wait(
+                cluster=cluster,
+                services=[
+                    service,
+                ],            
+                WaiterConfig={
+                    'Delay': 5,
+                    'MaxAttempts': 100
+                }
+            )
+        return True
+
     def get_task_containers(self, cluster, task_arn):
         return self.describe_task(cluster, task_arn)["containers"]
     
@@ -113,9 +144,6 @@ class EcsTools:
         for index, option in enumerate(self.clusters):
             options.append(f"{index}: {option}")
         return "\n".join(options)
-
-
-
 
 @click.group()
 @click.version_option()
@@ -147,6 +175,25 @@ def ecs_shell(region, command):
     click.secho("Executing command", fg="green")
     click.secho(command, fg="cyan")
     os.system(command)
+
+@cli.command()
+@click.option("--region", required=True, default=os.getenv("AWS_DEFAULT_REGION", "eu-west-2"))
+@click.option('--wait/--no-wait', default=False, help="Wait for service to become stable before exiting")
+@click.argument("service_arn", required=False)
+def restart_service(region, wait, service_arn):
+    ecs_tools = EcsTools(region)
+    if not service_arn: 
+        
+        click.secho(ecs_tools.get_cluster_options(), fg="cyan")
+        cluster = ecs_tools.clusters[int(click.prompt("Please select a cluster"))]
+
+        click.secho(ecs_tools.get_service_options(cluster), fg="cyan")
+        service_arn = ecs_tools.get_services(cluster)[int(click.prompt("Please select a service"))]
+    
+    click.echo(f"Restarting ARN: {service_arn}")
+    ecs_tools.restart_service(service_arn, wait)
+    if wait:
+        click.echo(f"Service {service_arn} restarted")
 
 if __name__ == "__main__":
     cli()
