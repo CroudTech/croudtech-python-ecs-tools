@@ -126,6 +126,27 @@ def cli():
 @cli.command()
 @click.option("--region", required=True, default=os.getenv("AWS_DEFAULT_REGION", "eu-west-2"))
 @click.option("--command", default="bash")
+def restart(region, command):
+    ecs_tools = EcsTools(region)
+
+    "Restart an ECS service"
+
+    click.secho(ecs_tools.get_cluster_options(), fg="cyan")
+    cluster = ecs_tools.clusters[int(click.prompt("Please select a cluster"))]
+
+    click.secho(ecs_tools.get_service_options(cluster), fg="cyan")
+    service_arn = ecs_tools.get_services(cluster)[int(click.prompt("Please select a service"))]
+    service = service_arn.split("/").pop()
+
+    command = f"aws ecs update-service --force-new-deployment --cluster {cluster} --service {service}"
+    click.secho("Executing command", fg="green")
+    click.secho(command, fg="cyan")
+    os.system(command)
+
+
+@cli.command()
+@click.option("--region", required=True, default=os.getenv("AWS_DEFAULT_REGION", "eu-west-2"))
+@click.option("--command", default="bash")
 def ecs_shell(region, command):
     ecs_tools = EcsTools(region)
 
