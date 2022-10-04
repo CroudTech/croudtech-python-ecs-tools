@@ -1,0 +1,52 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-18.04
+resources:
+  repositories:
+  - repository: templates
+    type: github
+    name: CroudTech/devops-azure-pipelines-step-templates
+    ref: master
+    endpoint: CroudTech
+  - repository: self
+variables:
+  - group: "package_managers"
+  - name: python_version
+    value: 3.8
+jobs:
+  - job: build
+    displayName: Build
+    condition: and(succeeded(), in(variables['Build.SourceBranchName'],  'integration', 'main'))
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python_version)"
+        displayName: "Use Python $(python_version)"
+      - task: gitversion/setup@0
+        displayName: Install GitVersion
+        inputs:
+          versionSpec: 5.x
+      - task: gitversion/execute@0
+        displayName: Use GitVersion
+      - script: | 
+          pip install -r requirements.dev.txt
+          python -m build
+          python -m twine upload ./dist/* --non-interactive -u __token__ -p $(pypi_token)
+  - job: GithubRelease
+    dependsOn: build
+    displayName: GithubRelease
+    steps:
+    - template: release/github-release.yaml@templates
+      parameters:
+        semVer: $(semVer)
+        github_access_token: $(github_access_token)
+        github_org: CroudTech
+        github_repo: croudtech-python-bootstrap-app
+      
