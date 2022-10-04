@@ -1,6 +1,12 @@
 import boto3
-from mypy_boto3_ecs.type_defs import ServiceTypeDef
-from mypy_boto3_servicediscovery.type_defs import NamespaceTypeDef
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from mypy_boto3_ecs.type_defs import ServiceTypeDef
+    from mypy_boto3_servicediscovery.type_defs import NamespaceTypeDef
+else:
+    ServiceTypeDef = object
+    NamespaceTypeDef = object
+
 from typing import List
 import json
 
