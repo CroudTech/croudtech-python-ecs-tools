@@ -9,6 +9,9 @@ boto3 = "*"
 boto3-stubs = {extras = ["ecs"], version = "*"}
 
 [dev-packages]
+autopep8 = "*"
+build = "*"
+twine = "*"
 
 [requires]
 python_version = "3.8"
