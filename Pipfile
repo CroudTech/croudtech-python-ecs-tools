@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 click = "*"
 boto3 = "*"
+boto3-stubs = {extras = ["ecs"], version = "*"}
 
 [dev-packages]
 

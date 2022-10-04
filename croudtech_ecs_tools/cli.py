@@ -5,6 +5,10 @@ from botocore.config import Config as Boto3Config
 from click.decorators import command
 from click.termui import prompt
 import os
+from croudtech_ecs_tools.ecs import Ecs
+import json
+
+
 
 class EcsTools:
     _services = {}
@@ -194,6 +198,13 @@ def restart_service(region, wait, service_arn):
     ecs_tools.restart_service(service_arn, wait)
     if wait:
         click.echo(f"Service {service_arn} restarted")
+
+
+@cli.command()
+@click.option("--cluster", required=True)
+def list_service_discovery_endpoints(cluster):
+    ecs_manager = Ecs(cluster=cluster)
+    print(json.dumps(ecs_manager.list_ecs_service_endpoints(), indent=2, default=str))
 
 if __name__ == "__main__":
     cli()
