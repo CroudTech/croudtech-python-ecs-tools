@@ -1,7 +1,7 @@
 from setuptools import setup
 import os
 
-VERSION = "0.1.5"
+VERSION = os.getenv("SEMVER", os.getenv("GitVersion_FullSemVer", "dev"))
 
 
 def get_long_description():
