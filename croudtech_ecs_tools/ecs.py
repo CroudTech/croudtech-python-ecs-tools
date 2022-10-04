@@ -83,7 +83,7 @@ class Ecs:
             for service_registry_arn in service["serviceRegistries"]:
                 sd = self.servicediscovery_client.get_service(Id=parse_arn(service_registry_arn["registryArn"])["resource"])
                 hostname = ".".join([sd["Service"]["Name"], self.namespaces[sd["Service"]["NamespaceId"]]["Name"]])
-                self._ecs_service_endpoints[hostname] = sd["Service"]["Name"]
+                self._ecs_service_endpoints[hostname] = service["serviceName"]
 
         return self._ecs_service_endpoints
 
