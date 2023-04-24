@@ -38,7 +38,7 @@ jobs:
         displayName: Use GitVersion
       - script: |
           pip install -r requirements.dev.txt
-          python -m build
+          python setup.py build sdist bdist bdist_wheel
           python -m twine upload ./dist/* --non-interactive -u __token__ -p $(pypi_token)
   - job: GithubRelease
     dependsOn: build
