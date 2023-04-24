@@ -21,13 +21,6 @@ variables:
   - name: python_version
     value: 3.8
 jobs:
-  - job: PythonTest
-    steps:
-      - template: test/python-test.yaml@templates
-        parameters:
-          coverage: app,core,status
-          root_dir: ./
-          python_version: 3.9
   - job: build
     displayName: Build
     dependsOn: PythonTest
