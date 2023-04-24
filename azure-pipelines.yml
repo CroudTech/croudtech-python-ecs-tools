@@ -51,11 +51,6 @@ jobs:
     dependsOn: build
     displayName: GithubRelease
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: "3.8"
-          addToPath: true
-          architecture: "x64"
       - template: release/github-release.yaml@templates
         parameters:
           semVer: $(semVer)
