@@ -23,7 +23,7 @@ variables:
 jobs:
   - job: build
     displayName: Build
-    condition: and(succeeded(), in(variables['Build.SourceBranchName'],  'integration', 'main'))
+    condition: in(variables['Build.SourceBranchName'],  'integration', 'main')
     steps:
       - task: UsePythonVersion@0
         inputs:
