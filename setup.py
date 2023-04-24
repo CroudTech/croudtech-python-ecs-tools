@@ -3,9 +3,6 @@ import os
 
 VERSION = os.getenv("SEMVER", os.getenv("GitVersion_FullSemVer", "dev"))
 
-with open(os.path.join(os.getcwd(), "requirements.txt")) as f:
-    required = f.read().splitlines()
-
 
 def get_long_description():
     with open(
@@ -34,7 +31,16 @@ setup(
         [console_scripts]
         croudtech-ecs-tools=croudtech_ecs_tools.cli:cli
     """,
-    install_requires=required,
+    install_requires=[
+        "boto3==1.20.28",
+        "botocore==1.23.28; python_version >= '3.6'",
+        "click==8.0.3",
+        "jmespath==0.10.0; python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+        "python-dateutil==2.8.2; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+        "s3transfer==0.5.0; python_version >= '3.6'",
+        "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+        "urllib3==1.26.7; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4'",
+    ],
     extras_require={
         "test": ["pytest"]
     },
