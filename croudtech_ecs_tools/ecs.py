@@ -9,6 +9,10 @@ else:
 
 from typing import List
 import json
+from datetime import datetime
+import click
+
+
 
 def parse_arn(arn):
     elements = arn.split(':')
@@ -87,3 +91,80 @@ class Ecs:
 
         return self._ecs_service_endpoints
 
+class EcsScaler:
+    def __init__(self, environment) -> None:
+        self.environment = environment
+
+    @property
+    def ecs_client(self):
+        if not hasattr(self, "_ecs_client"):
+            self._ecs_client = boto3.client("ecs")
+        return self._ecs_client
+    
+    def get_ecs_clusters(self):
+        clusters = self.ecs_client.describe_clusters(
+            clusters=self.ecs_client.list_clusters()["clusterArns"],
+            include=["TAGS"]
+        )
+
+        return [cluster for cluster in clusters["clusters"] if {"key": "Environment", "value": self.environment} in cluster["tags"]]
+    
+    def get_services(self):
+        services = {}
+        for cluster in self.get_ecs_clusters():
+            if cluster["clusterArn"] not in services:
+                services[cluster["clusterArn"]] = {}
+            paginator = self.ecs_client.get_paginator('list_services')
+            response_iterator = paginator.paginate(
+                cluster=cluster["clusterArn"],                    
+            )
+            for page in response_iterator:
+                for service in page["serviceArns"]:
+                    service_data = self.ecs_client.describe_services(
+                        services=page["serviceArns"], 
+                        cluster=cluster["clusterArn"],
+                        include=["TAGS"]
+                    )
+                    for service in service_data["services"]:
+                        services[cluster["clusterArn"]][service["serviceArn"]] = service
+
+        return services
+
+    def scale_down(self):
+        services = self.get_services()
+        for cluster_arn, services in services.items():
+            for service_arn, service in services.items():
+                desired_count = str(service["desiredCount"])
+                if int(desired_count) > 0:
+                    self.ecs_client.tag_resource(resourceArn=service_arn, tags=[
+                        {
+                            "key": "downscaler_desired_count",
+                            "value": desired_count
+                        },
+                        {
+                            "key": "downscaler_scaled_down_at",
+                            "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                    ])
+                    self.ecs_client.update_service(service=service_arn, cluster=cluster_arn, desiredCount=0)
+                    click.echo(f"Scaled down {service_arn} from {desired_count}")
+    
+    def scale_up(self):
+        services = self.get_services()
+        for cluster_arn, services in services.items():
+            for service_arn, service in services.items():
+                try:
+                    desired_count = self.serviceTagsDict(service)["downscaler_desired_count"]
+                    self.ecs_client.tag_resource(resourceArn=service_arn, tags=[
+                        {
+                            "key": "downscaler_scaled_up_at",
+                            "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                    ])
+                    self.ecs_client.update_service(service=service_arn, cluster=cluster_arn, desiredCount=int(desired_count))
+                    click.echo(f"Scaled up {service_arn} to {desired_count}")
+                except KeyError:
+                    pass
+
+    def serviceTagsDict(self, service):
+        return {tag["key"]: tag["value"] for tag in service["tags"]}

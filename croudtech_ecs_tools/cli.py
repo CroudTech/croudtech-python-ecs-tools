@@ -5,7 +5,7 @@ from botocore.config import Config as Boto3Config
 from click.decorators import command
 from click.termui import prompt
 import os
-from croudtech_ecs_tools.ecs import Ecs
+from croudtech_ecs_tools.ecs import Ecs, EcsScaler
 import json
 
 
@@ -205,6 +205,24 @@ def restart_service(region, wait, service_arn):
 def list_service_discovery_endpoints(cluster):
     ecs_manager = Ecs(cluster=cluster)
     print(json.dumps(ecs_manager.list_ecs_service_endpoints(), indent=2, default=str))
+
+@cli.command()
+@click.option("--cluster", required=True)
+def show_service_ips(cluster):
+    ecs_manager = Ecs(cluster=cluster)
+    print(json.dumps(ecs_manager.show_service_ips(), indent=2, default=str))
+
+@cli.command()
+@click.argument("environment")
+def scale_up(environment):
+    ecs_scaler = EcsScaler(environment)
+    ecs_scaler.scale_up()
+
+@cli.command()
+@click.argument("environment")
+def scale_down(environment):
+    ecs_scaler = EcsScaler(environment)
+    ecs_scaler.scale_down()
 
 if __name__ == "__main__":
     cli()
