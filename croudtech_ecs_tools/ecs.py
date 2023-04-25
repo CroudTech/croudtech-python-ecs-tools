@@ -3,9 +3,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from mypy_boto3_ecs.type_defs import ServiceTypeDef
     from mypy_boto3_servicediscovery.type_defs import NamespaceTypeDef
+    from mypy_boto3_ecs.client import ECSClient
 else:
     ServiceTypeDef = object
     NamespaceTypeDef = object
+    ECSClient = object
 
 from typing import List
 import json
@@ -90,6 +92,67 @@ class Ecs:
                 self._ecs_service_endpoints[hostname] = service["serviceName"]
 
         return self._ecs_service_endpoints
+
+
+class ServiceInfo:
+    def __init__(self):
+        pass
+
+    @property
+    def clusters(self):
+        if not hasattr(self, "_clusters"):
+            self._clusters = []
+            for cluster in self.ecs_client.list_clusters()["clusterArns"]:
+                self._clusters.append(cluster.split("/").pop())
+        return self._clusters
+                
+
+    @property
+    def ecs_client(self) -> ECSClient:
+        if not hasattr(self, "_ecs_client"):
+            self._ecs_client = boto3.client("ecs")
+        return self._ecs_client
+    
+    def get_tasks(self, cluster):
+        paginator = self.ecs_client.get_paginator("list_tasks")
+        task_arns = []
+        for page in paginator.paginate(
+            cluster=cluster
+        ):
+            task_arns = task_arns + page["taskArns"]
+        return task_arns
+
+    def get_task_descriptions(self, cluster):
+        task_arns = self.get_tasks(cluster)
+        descriptions = self.ecs_client.describe_tasks(
+            cluster=cluster,
+            tasks=task_arns
+        )
+        return descriptions["tasks"]
+
+    def show_service_ips(self, cluster=None, ip_filter=None):
+        if cluster:
+            clusters = [cluster]
+        else:
+            clusters = self.clusters
+        services = {}
+        for cluster in clusters:
+            for task in self.get_task_descriptions(cluster):
+                for attachment in task["attachments"]:
+                    if attachment["type"] == "ElasticNetworkInterface":
+                        for detail in attachment["details"]:
+                            if detail["name"] == "privateIPv4Address":                                
+                                if (not ip_filter) or detail["value"] in ip_filter:
+                                    if task["group"] not in services:
+                                        services[task["group"]] = {}
+                                    services[task["group"]] = {
+                                        "task_arn": task["taskArn"],
+                                        "ip_address": detail["value"]
+                                    }
+        return services
+
+
+        
 
 class EcsScaler:
     def __init__(self, environment) -> None:

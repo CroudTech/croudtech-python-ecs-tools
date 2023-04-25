@@ -12,6 +12,7 @@ boto3-stubs = {extras = ["ecs"], version = "*"}
 autopep8 = "*"
 build = "*"
 twine = "*"
+boto3-stubs = {extras = ["ecs", "essential", "servicediscovery"], version = "*"}
 
 [requires]
 python_version = "3.8"

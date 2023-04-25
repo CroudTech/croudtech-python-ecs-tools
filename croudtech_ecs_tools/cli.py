@@ -5,7 +5,7 @@ from botocore.config import Config as Boto3Config
 from click.decorators import command
 from click.termui import prompt
 import os
-from croudtech_ecs_tools.ecs import Ecs, EcsScaler
+from croudtech_ecs_tools.ecs import Ecs, EcsScaler, ServiceInfo
 import json
 
 
@@ -207,10 +207,11 @@ def list_service_discovery_endpoints(cluster):
     print(json.dumps(ecs_manager.list_ecs_service_endpoints(), indent=2, default=str))
 
 @cli.command()
-@click.option("--cluster", required=True)
-def show_service_ips(cluster):
-    ecs_manager = Ecs(cluster=cluster)
-    print(json.dumps(ecs_manager.show_service_ips(), indent=2, default=str))
+@click.option("--cluster", required=False)
+@click.option("--ip-filter", multiple=True)
+def show_service_ips(cluster=None, ip_filter=None):
+    service_info = ServiceInfo()
+    print(json.dumps(service_info.show_service_ips(cluster, ip_filter), indent=2, default=str))
 
 @cli.command()
 @click.argument("environment")
