@@ -144,11 +144,11 @@ class ServiceInfo:
                             if detail["name"] == "privateIPv4Address":                                
                                 if (not ip_filter) or detail["value"] in ip_filter:
                                     if task["group"] not in services:
-                                        services[task["group"]] = {}
-                                    services[task["group"]] = {
+                                        services[task["group"]] = []
+                                    services[task["group"]].append({
                                         "task_arn": task["taskArn"],
                                         "ip_address": detail["value"]
-                                    }
+                                    })
         return services
 
 
