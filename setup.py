@@ -1,8 +1,9 @@
 from setuptools import setup
 import os
 
-VERSION = os.getenv("SEMVER", os.getenv("GitVersion_FullSemVer", "dev"))
 
+with open("./VERSION") as version_file:
+    PINNED_VERSION=version_file.read().strip()
 
 def get_long_description():
     with open(
@@ -25,12 +26,14 @@ setup(
         "Changelog": "https://github.com/CroudTech/croudtech-ecs-tools/releases",
     },
     license="Apache License, Version 2.0",
-    version=VERSION,
+    version=PINNED_VERSION,
     packages=["croudtech_ecs_tools"],
     entry_points="""
         [console_scripts]
         croudtech-ecs-tools=croudtech_ecs_tools.cli:cli
     """,
+    setup_requires=["setuptools_scm"],
+    include_package_data=True,
     install_requires=[
         "boto3==1.20.28",
         "botocore==1.23.28; python_version >= '3.6'",
